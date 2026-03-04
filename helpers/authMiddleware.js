@@ -16,19 +16,19 @@ const decodeJwtUser = async (token) => {
     }
 }
 
-const authMiddlewareInterceptor = async (req, res, next) => {
+const authMiddlewareInterceptor = async (req, res, next) => { 
     try{
-        console.log("req.headers: ", req.headers);
-        const authHeader = req.headers.authorization;
+        console.log("req.headers: ", req.headers); 
+        const authHeader = req.headers.authorization; 
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({ message: "Unauthorized: No token provided", statusCode: 401 });
         }
         const token = authHeader.split(" ")[1];
         const verifiedToken = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("comparism: ", {
-            user: await decodeJwtUser(token),
-            verifiedToken,
-        });
+        // console.log("comparism: ", {
+        //     user: await decodeJwtUser(token),
+        //     verifiedToken,
+        // });
         const decodedUser = await decodeJwtUser(token);
         if (decodedUser.email !== verifiedToken.email) {
             return res.status(401).json({ message: "Unauthorized: Invalid token", statusCode: 401 });
@@ -39,4 +39,20 @@ const authMiddlewareInterceptor = async (req, res, next) => {
         return next(res.status(401).json({ message: "Unauthorized: Invalid token" }));
     }
 }
-module.exports = {decodeJwtUser, authMiddlewareInterceptor};
+
+const fetchUserRole = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "Unauthorized: No token provided", statusCode: 401 });
+        }
+
+        const token = authHeader.split(" ")[1]; 
+        const userDetails = await decodeJwtUser(token);
+        return userDetails?.role;
+    }catch (error) {
+        return next(res.status(401).json({ message: "Unauthorized: Invalid token" }));
+    };
+};
+
+module.exports = { decodeJwtUser, authMiddlewareInterceptor, fetchUserRole };
